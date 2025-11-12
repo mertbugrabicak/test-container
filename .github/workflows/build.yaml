@@ -15,7 +15,7 @@ jobs:
 
     outputs:
       image: "quay.io/mbicak/test-container"
-      digest: ${{ steps.build-image.outputs.image-digest }}
+      digest: ${{ steps.push-to-quay.outputs.digest }}
 
     steps:
       - name: Checkout repository
