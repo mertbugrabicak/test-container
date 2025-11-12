@@ -6,14 +6,16 @@ on:
 
 jobs:
   build:
-    name: Build, Attest, and Push Image
+    name: Build and Push Image
     runs-on: ubuntu-22.04
 
-    # Permissions needed for SLSA attestation
     permissions:
       contents: read
-      id-token: write   # Required to sign the SLSA attestation
-      packages: write   # Required to push the attestation to Quay.io
+      packages: write
+
+    outputs:
+      image: "quay.io/mbicak/test-container"
+      digest: ${{ steps.build-image.outputs.image-digest }}
 
     steps:
       - name: Checkout repository
@@ -41,7 +43,6 @@ jobs:
           tags: latest ${{ steps.sha.outputs.sha }}
           containerfiles: |
             ./src/main/docker/Dockerfile.jvm
-          attestation-type: slsaprovenance
 
       - name: Push To quay.io
         id: push-to-quay
@@ -49,9 +50,35 @@ jobs:
         with:
           image: ${{ steps.build-image.outputs.image }}
           tags: ${{ steps.build-image.outputs.tags }}
-          registry: quay.io
+          registry: quay.io # This combines with the base name above
           username: ${{ secrets.QUAY_USER }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
       - name: Print image url
         run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+
+  # JOB 2: Generate and push the SLSA provenance
+  provenance:
+    name: Generate Provenance
+    needs: [build] # This job runs *after* the build job
+    runs-on: ubuntu-latest
+
+    # Permissions for this job: get OIDC token, write attestations
+    permissions:
+      actions: read
+      id-token: write # Required for signing
+      packages: write # Required to push attestation
+
+    steps:
+      - name: Generate SLSA Provenance
+        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
+        with:
+          # Get the full image name from the build job's output
+          image: ${{ needs.build.outputs.image }}
+          # Get the exact digest from the build job's output
+          digest: ${{ needs.build.outputs.digest }}
+
+          # Authenticate to Quay.io
+          registry-username: ${{ secrets.QUAY_USER }}
+        secrets:
+          registry-password: ${{ secrets.QUAY_PASSWORD }}
