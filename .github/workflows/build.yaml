@@ -37,7 +37,7 @@ jobs:
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
-          image: quay.io/mbicak/test-container
+          image: mbicak/test-container
           tags: latest ${{ steps.sha.outputs.sha }}
           containerfiles: |
             ./src/main/docker/Dockerfile.jvm
