@@ -2,7 +2,7 @@ name: Build and Push Image to Quay.io
 
 on:
   push:
-    branches: [ main ] # Or whichever branch you want to build from
+    branches: [ main ]
 
 jobs:
   build:
