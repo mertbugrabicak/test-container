@@ -16,6 +16,8 @@ jobs:
     # specific output to pass to the next job if needed, 
     # but we can also just recalculate SHA in the next job
     outputs:
+      image: "quay.io/mbicak/test-container"
+      digest: ${{ steps.push-to-quay.outputs.digest }}
       short_sha: ${{ steps.sha.outputs.sha }}
 
     steps:
@@ -63,8 +65,8 @@ jobs:
       packages: write # for uploading attestations.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
-      image: ${{ needs.build.outputs.image }}
-      digest: ${{ needs.build.outputs.digest }}
+      image: ${{ needs.build-image.outputs.image }}
+      digest: ${{ needs.build-image.outputs.digest }}
     secrets:
       registry-username: ${{ secrets.QUAY_USER }}
       registry-password: ${{ secrets.QUAY_PASSWORD }}
@@ -74,7 +76,7 @@ jobs:
   publish-chart:
     name: Publish Helm Chart
     runs-on: ubuntu-22.04
-    needs: build-image
+    needs: [build-image, provenance]
     
     steps:
       - name: Checkout repository
