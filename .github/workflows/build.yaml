@@ -72,12 +72,16 @@ jobs:
       registry-password: ${{ secrets.QUAY_PASSWORD }}
 
 
-  # This job ONLY runs if 'build-image' succeeds
+  # This job ONLY runs if 'build-image' and 'provenance' succeeds
   publish-chart:
     name: Publish Helm Chart
     runs-on: ubuntu-22.04
     needs: [build-image, provenance]
-    
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -86,6 +90,9 @@ jobs:
         uses: azure/setup-helm@v4
         with:
           version: 'latest'
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.8.1
 
       # We calculate the SHA again to ensure it matches the image tag exactly
       - name: Get short SHA
@@ -109,3 +116,8 @@ jobs:
       - name: Push Chart to Quay.io
         run: |
           helm push *.tgz oci://quay.io/mbicak
+
+      - name: Sign Helm Chart
+        run: |
+          # Signs the specific version we just pushed
+          cosign sign -y "quay.io/mbicak/test-chart:0.1.${{ github.run_number }}"
