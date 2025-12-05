@@ -42,4 +42,4 @@ jobs:
       - name: Push Chart to Quay.io
         run: |
           # This pushes to quay.io/mbicak/test-chart (derived from Chart.yaml name)
-          helm push *.tgz oci://quay.io/${{ secrets.QUAY_USER }}
+          helm push *.tgz oci://quay.io/mbicak
