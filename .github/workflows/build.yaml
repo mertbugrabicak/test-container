@@ -117,6 +117,10 @@ jobs:
         run: |
           helm push *.tgz oci://quay.io/mbicak
 
+      - name: Login to Quay for Cosign
+        run: |
+          echo "${{ secrets.QUAY_PASSWORD }}" | cosign login quay.io --username "${{ secrets.QUAY_USER }}" --password-stdin
+
       - name: Sign Helm Chart
         run: |
           # Signs the specific version we just pushed
